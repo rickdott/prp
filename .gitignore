@@ -1,3 +1,4 @@
 *.pt
 *.nc*
 /data
+*_peaks.csv
