@@ -1,4 +1,5 @@
 *.pt
 *.nc*
 /data
-*_peaks.csv
+*.csv
+__pycache__/
