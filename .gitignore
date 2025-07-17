@@ -2,4 +2,5 @@
 *.nc*
 /data
 *.csv
+*.npz
 __pycache__/

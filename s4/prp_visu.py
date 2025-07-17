@@ -81,8 +81,8 @@ def plot_order_effect_on_rt(df, orders: list[list[int]], labels=["t1_1", "t1_2",
         df.loc[mask, "order_idx"] = idx
     # Filter out rows with order_idx -1
     df = df[df["order_idx"] != -1]
-    df["rt_samples_t1"] = (df["rt_samples_t1"] / 250) * 1000
-    ax = sns.violinplot(data=df, x="order_idx", y="rt_samples_t1", cut=0)
+    df["rt_t1"] = (df["rt_t1"] / 250) * 1000
+    ax = sns.violinplot(data=df, x="order_idx", y="rt_t1", cut=0)
     xticks = [' > '.join([labels[i] for i in order]) for order in orders]
     plt.xticks(range(len(orders)), xticks, rotation=45)
     plt.hlines(y=610.63, xmin=-0.5, xmax=len(orders)-0.5, color=sns.color_palette()[2], linestyles='dashed', label="Mean RT (short)")
