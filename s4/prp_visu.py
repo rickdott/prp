@@ -155,64 +155,33 @@ def plot_order_distribution_stacked(df, labels):
     plt.xlim(0, order_df["Count"].max() + 50)
     return plt.figure()
 
-def plot_relative_order_with_rt_lines(df, labels):
+def plot_sequences_per_participant(df, labels, ax):
+    # Count how many times each order_idx appears per participant
     set_seaborn_style()
-    if "participant" not in df.columns:
-        raise ValueError("The DataFrame must contain a 'participant' column.")
-
-    # Filter for short condition
-    df_short = df[df["condition"] == "short"].copy()
-
-    # === STRATEGY DISTRIBUTION ===
-    order_counts = df_short.groupby(["participant", "order"]).size().reset_index(name="Count")
-
-    order_counts["order"] = order_counts["order"].apply(lambda x: " > ".join([labels[i] for i in x]))
-
-    pivot_df = order_counts.pivot_table(index="participant", columns="order", values="Count", fill_value=0)
-    custom_order = [
-        "(0, 1, 2, 3, 4, 5)",
-        "(0, 1, 3, 2, 4, 5)",
-        "(0, 1, 3, 4, 2, 5)",
-        "(0, 3, 1, 2, 4, 5)",
-        "(0, 3, 1, 4, 2, 5)"
-    ]
-    
-    # Convert to the label format you're using (e.g., "A > B > C > D > E > F")
-    custom_order_labels = [" > ".join([labels[int(i)] for i in order.strip("()").split(", ")]) 
-                         for order in custom_order]
-    existing_columns = [col for col in custom_order_labels if col in pivot_df.columns]
-    pivot_df = pivot_df[existing_columns]
-    percent_df = pivot_df.div(pivot_df.sum(axis=1), axis=0) * 100
-
-    # Sort participants by usage of the first strategy
-    first_two_strategies = percent_df.columns[1:]
-    percent_df["sort_key"] = percent_df[first_two_strategies].sum(axis=1)
-    percent_df = percent_df.sort_values(by="sort_key", ascending=False).drop(columns="sort_key")
-    sorted_participants = percent_df.index.tolist()
-
-    # === PLOTTING ===
-    fig, ax1 = plt.subplots(figsize=(9.5, 3), dpi=300)
-
-    # Stacked bar plot
-    percent_df.plot(kind="bar", stacked=True, ax=ax1, width=0.95)
-    ax1.set_ylabel("Trials (%)")
-    ax1.set_xlabel("Participant")
-    ax1.set_title("Strategy Use per Participant (Short Condition)")
-    ax1.legend(title="Order", bbox_to_anchor=(1.05, 1), loc="upper left")
-
-    # x-axis tick labels
-    ax1.set_xticks(range(len(sorted_participants)))
-    ax1.set_xticklabels(sorted_participants, rotation=45)
-
-    # Combine legends
-    bars_legend = ax1.get_legend_handles_labels()
-    ax1.legend(
-        handles=bars_legend[0],
-        labels=bars_legend[1],
-        bbox_to_anchor=(1.10, 1),
-        loc="upper left",
-        title="Legend",
+    df = df.copy()
+    df = df[df['condition'] == 'short']
+    counts = (
+        df.groupby(["participant", "order_idx"])
+        .size()
+        .unstack(fill_value=0)
     )
-
-    plt.tight_layout()
-    return plt.figure()
+    counts.index = counts.index.str.replace("VP", "").astype(int)
+    counts = counts.sort_index()
+    # Convert to percentages if you want proportions instead of raw counts
+    counts = counts.div(counts.sum(axis=1), axis=0) * 100
+    counts = counts[counts.columns[::-1]]
+    desat_hex = sns.color_palette(
+        sns.color_palette()[5:10][::-1], desat=0.8
+    ).as_hex()
+    # Plot as stacked bar chart
+    counts.plot(
+        kind="bar",
+        stacked=True,
+        ax=ax,
+        width=0.9,
+        color=desat_hex,
+    )
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+    ax.set_xlabel("Participant")
+    ax.set_ylabel("Trials (%)")
+    ax.set_ylim(0, 100)  # if using percentages
